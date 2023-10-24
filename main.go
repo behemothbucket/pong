@@ -17,10 +17,12 @@ const (
 )
 
 type Game struct {
-	field  *Field
-	racket *Racket
-	ball   *Ball
-	score  []int
+	field   *Field
+	racket  *Racket
+	ball    *Ball
+	score   []int
+	scored  bool
+	timeout int
 }
 
 func main() {
@@ -54,17 +56,16 @@ func newGame() *Game {
 	}
 
 	ball := &Ball{
-		x:      screenWidth / 2,
-		y:      screenHeight / 2,
 		radius: 5,
-		speedX: 4,
-		speedY: 4,
 		color:  &color.White,
 	}
+	ball.RandomDirection()
 
 	score := make([]int, 2)
+	scored := false
+	timeout := 0
 
-	return &Game{field, racket, ball, score}
+	return &Game{field, racket, ball, score, scored, timeout}
 }
 
 func (g *Game) Update() error {
