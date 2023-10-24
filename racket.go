@@ -19,14 +19,19 @@ func (r *Racket) Update() {
 	r.y = float32(mouseY) - r.height/2
 }
 
-func (r *Racket) Draw(screen *ebiten.Image) {
-	ry := r.y
-
-	if ry < 0 {
-		ry = 0
-	} else if ry > screenHeight-r.height {
-		ry = screenHeight - r.height
+func (r *Racket) getLimitedY() float32 {
+	if r.y < 0 {
+		return 0
 	}
 
-	vector.DrawFilledRect(screen, r.x, ry, r.width, r.height, r.color, false)
+	if r.y > screenHeight-r.height {
+		return screenHeight - r.height
+	}
+
+	return r.y
+}
+
+func (r *Racket) Draw(screen *ebiten.Image) {
+	y := r.getLimitedY()
+	vector.DrawFilledRect(screen, r.x, y, r.width, r.height, r.color, false)
 }
