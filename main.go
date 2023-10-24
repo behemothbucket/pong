@@ -2,59 +2,35 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"image/color"
 	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 const (
-	screenWidth  = 800
-	screenHeight = 600
+	screenWidth  = 640
+	screenHeight = 480
 )
 
 type Game struct {
-	rocket *Rocket
-	ball   *Ball
 	field  *Field
-}
-
-type Field struct {
-	fieldLine *FieldLine
-}
-
-type FieldLine struct {
-	x       float32
-	y       float32
-	width   float32
-	spacing float32
-	color   *color.Gray16
-}
-
-type Rocket struct {
-	x, y   float32
-	width  float32
-	height float32
-	color  *color.Gray16
-}
-
-type Ball struct {
-	x, y           float32
-	speedX, speedY float32
-	size           float32
-	color          *color.Gray16
+	racket *Racket
+	ball   *Ball
+	score  []int
 }
 
 func main() {
-	ebiten.SetWindowSize(screenWidth, screenHeight)
+	ebiten.SetWindowSize(screenWidth*1.5, screenHeight*1.5)
 	ebiten.SetWindowTitle("        Pong")
 
 	game := newGame()
 
 	if err := ebiten.RunGame(game); err != nil {
-		log.Fatalf("Ошибка при запуске игры: %v", err)
+		log.Fatal(err)
 	}
 }
 
@@ -69,7 +45,7 @@ func newGame() *Game {
 		},
 	}
 
-	rocket := &Rocket{
+	racket := &Racket{
 		x:      10,
 		y:      screenHeight / 2,
 		width:  10,
@@ -80,81 +56,38 @@ func newGame() *Game {
 	ball := &Ball{
 		x:      screenWidth / 2,
 		y:      screenHeight / 2,
-		size:   20,
-		speedX: 6,
-		speedY: 6,
+		radius: 5,
+		speedX: 4,
+		speedY: 4,
 		color:  &color.White,
 	}
 
-	return &Game{
-		field:  field,
-		rocket: rocket,
-		ball:   ball,
-	}
-}
+	score := make([]int, 2)
 
-func (fl *FieldLine) Draw(screen *ebiten.Image) {
-	for y := fl.y; y < screenHeight; y += fl.spacing {
-		vector.DrawFilledRect(screen, fl.x, y, fl.width, fl.width+fl.spacing/2, fl.color, false)
-	}
-}
-
-func (f *Field) Draw(screen *ebiten.Image) {
-	f.fieldLine.Draw(screen)
-}
-
-func (r *Rocket) Update() {
-	_, mouseY := ebiten.CursorPosition()
-	r.y = float32(mouseY) - r.height/2
-}
-
-func (r *Rocket) Draw(screen *ebiten.Image) {
-	ry := r.y
-
-	if ry < 0 {
-		ry = 0
-	} else if ry > screenHeight-r.height {
-		ry = screenHeight - r.height
-	}
-
-	vector.DrawFilledRect(screen, r.x, ry, r.width, r.height, r.color, false)
-}
-
-func (b *Ball) HandleCollisions() {
-	if b.x < 0 || b.x > screenWidth-b.size {
-		b.speedX = -b.speedX
-	}
-	if b.y < 0 || b.y > screenHeight-b.size {
-		b.speedY = -b.speedY
-	}
-}
-
-func (b *Ball) Update() {
-	b.x += b.speedX
-	b.y += b.speedY
-
-	b.HandleCollisions()
-}
-
-func (b *Ball) Draw(screen *ebiten.Image) {
-	vector.DrawFilledRect(screen, b.x, b.y, b.size, b.size, b.color, false)
+	return &Game{field, racket, ball, score}
 }
 
 func (g *Game) Update() error {
-	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
-		return errors.New("quit")
+	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) || inpututil.IsKeyJustPressed(ebiten.KeyQ) {
+		return errors.New("Quit")
 	}
 
-	g.rocket.Update()
-	g.ball.Update()
+	g.racket.Update()
+	g.ball.Update(g)
 
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.field.Draw(screen)
-	g.rocket.Draw(screen)
+	g.racket.Draw(screen)
 	g.ball.Draw(screen)
+	g.DrawScore(screen)
+}
+
+func (g *Game) DrawScore(screen *ebiten.Image) {
+	scoreText := fmt.Sprintf("%d:%d", g.score[0], g.score[1])
+	ebitenutil.DebugPrint(screen, scoreText)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
