@@ -8,10 +8,11 @@ import (
 )
 
 type Racket struct {
-	x, y   float32
+	color  *color.Gray16
+	x      float32
+	y      float32
 	width  float32
 	height float32
-	color  *color.Gray16
 }
 
 func (r *Racket) Update() {

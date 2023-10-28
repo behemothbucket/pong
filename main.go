@@ -18,7 +18,8 @@ const (
 
 type Game struct {
 	field   *Field
-	racket  *Racket
+	racket1 *Racket
+	racket2 *Racket
 	ball    *Ball
 	score   []int
 	scored  bool
@@ -42,13 +43,21 @@ func newGame() *Game {
 			x:       screenWidth / 2,
 			y:       0,
 			width:   2,
-			spacing: 10,
+			spacing: 18,
 			color:   &color.White,
 		},
 	}
 
-	racket := &Racket{
+	racket1 := &Racket{
 		x:      10,
+		y:      screenHeight / 2,
+		width:  10,
+		height: 50,
+		color:  &color.White,
+	}
+
+	racket2 := &Racket{
+		x:      screenWidth - racket1.width - 10,
 		y:      screenHeight / 2,
 		width:  10,
 		height: 50,
@@ -59,13 +68,13 @@ func newGame() *Game {
 		radius: 5,
 		color:  &color.White,
 	}
-	ball.RandomDirection()
+	ball.ServeTheBall()
 
 	score := make([]int, 2)
 	scored := false
 	timeout := 0
 
-	return &Game{field, racket, ball, score, scored, timeout}
+	return &Game{field, racket1, racket2, ball, score, scored, timeout}
 }
 
 func (g *Game) Update() error {
@@ -73,7 +82,8 @@ func (g *Game) Update() error {
 		return errors.New("Quit")
 	}
 
-	g.racket.Update()
+	g.racket1.Update()
+	g.racket2.Update()
 	g.ball.Update(g)
 
 	return nil
@@ -81,13 +91,14 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.field.Draw(screen)
-	g.racket.Draw(screen)
+	g.racket1.Draw(screen)
+	g.racket2.Draw(screen)
 	g.ball.Draw(screen)
 	g.DrawScore(screen)
 }
 
 func (g *Game) DrawScore(screen *ebiten.Image) {
-	scoreText := fmt.Sprintf("%d:%d", g.score[0], g.score[1])
+	scoreText := fmt.Sprintf("%d:%d\ndirectionX: %0.f", g.score[0], g.score[1], g.ball.speedX)
 	ebitenutil.DebugPrint(screen, scoreText)
 }
 
