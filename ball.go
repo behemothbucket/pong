@@ -10,21 +10,24 @@ import (
 )
 
 type Ball struct {
-	color  *color.Gray16
-	x      float32
-	y      float32
-	speedX float32
-	speedY float32
-	radius float32
+	color      *color.Gray16
+	x          float32
+	y          float32
+	directionX float32
+	directionY float32
+	speed      float32
+	radius     float32
 }
 
-func (b *Ball) HandleCollisions(g *Game) {
-	checkWallCollision(b, g)
-	checkRacketCollision(g, b, g.racket1)
-	checkRacketCollision(g, b, g.racket2)
+var randomSource = rand.NewSource(time.Now().UnixNano())
+
+func (b *Ball) handleCollisions(g *Game) {
+	b.checkWallCollision(g)
+	b.checkRacketCollision(g, g.racket1)
+	b.checkRacketCollision(g, g.racket2)
 }
 
-func checkWallCollision(b *Ball, g *Game) {
+func (b *Ball) checkWallCollision(g *Game) {
 	if b.x < -b.radius || b.x > screenWidth+b.radius {
 		playerIndex := 0
 
@@ -38,19 +41,16 @@ func checkWallCollision(b *Ball, g *Game) {
 	}
 
 	if b.y < 0 || b.y > screenHeight-b.radius {
-		b.speedY *= -1
+		b.directionY *= -1
 	}
 }
 
-func checkRacketCollision(g *Game, b *Ball, racket *Racket) {
-	if b.x-b.radius < racket.x+racket.width && b.x+b.radius > racket.x &&
-		b.y+b.radius > racket.y && b.y-b.radius < racket.y+racket.height {
-		random := getRandomSource()
-
-		if racket == g.racket1 {
-			b.speedX, _ = getRandomSpeed(random, 4, 8)
-		} else if racket == g.racket2 {
-			b.speedX, _ = getRandomSpeed(random, -8, -4)
+// FIX: верхняя и нижняя граница не обрабатывется
+func (b *Ball) checkRacketCollision(g *Game, r *Racket) {
+	if b.x >= r.x && b.x <= r.x+r.width {
+		if b.y >= r.y-(r.y/2) && b.y <= r.y+(r.height/2) {
+			b.speed = getRandomSpeed(1, 3)
+			b.directionX *= -1
 		}
 	}
 }
@@ -62,38 +62,39 @@ func (b *Ball) Update(g *Game) {
 	}
 
 	if g.scored {
-		b.ServeTheBall()
+		b.ServeBall()
 		g.scored = false
 	}
 
-	b.x += b.speedX
-	b.y += b.speedY
+	b.x += b.directionX * b.speed
+	b.y += b.directionY * b.speed
 
-	b.HandleCollisions(g)
+	b.handleCollisions(g)
 }
 
-func (b *Ball) ServeTheBall() {
-	random := getRandomSource()
-
+func (b *Ball) ServeBall() {
 	b.x = screenWidth / 2
-	b.y = float32(random.Intn(460) + 1)
-
-	b.speedX, b.speedY = getRandomSpeed(random, 4, 8)
+	b.y = screenHeight / 2
+	b.directionX, b.directionY = getRandomDirection()
+	b.speed = getRandomSpeed(5, 6)
 }
 
-// FIX: направление мяча, случайная скорость
-func getRandomSpeed(random *rand.Rand, min, max float32) (float32, float32) {
-	speeds := []float32{min, max}
-	index1 := random.Intn(len(speeds))
-	index2 := random.Intn(len(speeds))
-	return speeds[index1], speeds[index2]
+func getRandomSpeed(min, max float32) float32 {
+	random := rand.New(randomSource)
+	return min + random.Float32()*(max-min)
 }
 
-func getRandomSource() (r *rand.Rand) {
-	source := rand.NewSource(time.Now().UnixNano())
-	return rand.New(source)
+func getRandomDirection() (float32, float32) {
+	random := rand.New(randomSource)
+
+	directions := []float32{-1, 1}
+
+	directionX := directions[random.Intn(2)]
+	directionY := directions[random.Intn(2)]
+
+	return directionX, directionY
 }
 
 func (b *Ball) Draw(screen *ebiten.Image) {
-	vector.DrawFilledCircle(screen, b.x, b.y, b.radius, b.color, false)
+	vector.DrawFilledRect(screen, b.x, b.y, b.radius, b.radius, b.color, false)
 }

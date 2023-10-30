@@ -28,7 +28,7 @@ type Game struct {
 
 func main() {
 	ebiten.SetWindowSize(screenWidth*1.5, screenHeight*1.5)
-	ebiten.SetWindowTitle("        Pong")
+	ebiten.SetWindowTitle("Pong")
 
 	game := newGame()
 
@@ -65,10 +65,10 @@ func newGame() *Game {
 	}
 
 	ball := &Ball{
-		radius: 5,
+		radius: 10,
 		color:  &color.White,
 	}
-	ball.ServeTheBall()
+	ball.ServeBall()
 
 	score := make([]int, 2)
 	scored := false
@@ -79,7 +79,7 @@ func newGame() *Game {
 
 func (g *Game) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) || inpututil.IsKeyJustPressed(ebiten.KeyQ) {
-		return errors.New("Quit")
+		return errors.New("Quit game")
 	}
 
 	g.racket1.Update()
@@ -98,7 +98,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) DrawScore(screen *ebiten.Image) {
-	scoreText := fmt.Sprintf("%d:%d\ndirectionX: %0.f", g.score[0], g.score[1], g.ball.speedX)
+	scoreText := fmt.Sprintf("FPS:%0.f\ndX:%0.f\ndY:%0.f\nspeed:%0.f", ebiten.ActualFPS(), g.ball.directionX, g.ball.directionY, g.ball.speed)
 	ebitenutil.DebugPrint(screen, scoreText)
 }
 

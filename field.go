@@ -12,11 +12,11 @@ type Field struct {
 }
 
 type FieldLine struct {
+	color   *color.Gray16
 	x       float32
 	y       float32
 	width   float32
 	spacing float32
-	color   *color.Gray16
 }
 
 func (fl *FieldLine) Draw(screen *ebiten.Image) {
